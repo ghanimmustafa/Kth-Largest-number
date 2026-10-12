@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kth Largest · Live Algorithm Lab</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#e5edf8;background:#080e1b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#15203c 0,transparent 55%),#080e1b}main{max-width:1240px;margin:auto;padding:28px 24px 50px}nav{display:flex;align-items:center;justify-content:space-between;padding-bottom:28px;border-bottom:1px solid #253047}.brand{font-weight:750;letter-spacing:-.02em}.brand span{color:#38bdf8}.tag{font:12px ui-monospace,monospace;color:#9caec9;padding:7px 12px;border:1px solid #30405a;border-radius:30px}.tag i{display:inline-block;width:7px;height:7px;background:#34d399;border-radius:50%;margin-right:8px}.eyebrow{font-size:11px;letter-spacing:.18em;color:#38bdf8;margin-top:30px}h1{font-size:clamp(32px,5vw,52px);line-height:1.12;letter-spacing:-.04em;margin:14px 0}h1 span{color:#8ea3c3}p{line-height:1.65;color:#9aaecb;max-width:840px;font-size:14px}.toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:14px;background:#101a2d;border:1px solid #263450;border-radius:16px;padding:18px;margin:26px 0 16px}label{display:grid;gap:7px;color:#9aaecb;font-size:12px}select,input,button{font:inherit;color:#e5edf8;background:#18243a;border:1px solid #34425c;border-radius:8px;padding:10px 12px}input[type=number]{width:102px}button{cursor:pointer;font-size:13px;font-weight:650}button:hover{border-color:#38bdf8}button:disabled{opacity:.4;cursor:default}.primary{background:#38bdf8;color:#07131f;border-color:#38bdf8}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}.session{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font:12px ui-monospace,monospace;color:#93a8c6;margin:16px 0}.session strong{color:#d6e2f3}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:#101a2d;border:1px solid #263450;border-radius:16px;overflow:hidden}.card-head{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}.title{font-size:16px;font-weight:650}.title i{display:inline-block;width:9px;height:9px;background:var(--accent);border-radius:50%;margin-right:9px}.complexity{font:11px ui-monospace,monospace;color:#93a8c6;margin:5px 0 0 18px}.state{font:11px ui-monospace,monospace;border:1px solid #34425c;border-radius:30px;padding:5px 9px;color:#93a8c6}.state.running{color:var(--accent);border-color:var(--accent)}.state.done{color:#34d399;border-color:#34d399}.state.error{color:#fb7185;border-color:#fb7185}.plot{padding:0 18px}canvas{display:block;width:100%;height:160px;background:#0b1424;border-radius:8px}.phase{font:11px ui-monospace,monospace;color:#93a8c6;padding:12px 20px;min-height:38px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 20px;border-top:1px solid #263450}.stats span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7f95b5}.stats strong{display:block;margin-top:5px;font:19px ui-monospace,monospace}.note{font-size:12px;margin:16px 0 34px}.section-head{display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap}h2{font-size:22px;letter-spacing:-.03em;margin:0}#ci-status{color:#9aaecb;font:12px ui-monospace,monospace}.ci-panel{padding:22px;background:#101a2d;border:1px solid #263450;border-radius:16px;margin-top:18px}.ci-row{display:grid;grid-template-columns:110px 1fr 90px;gap:16px;align-items:center;margin:16px 0;font-size:12px}.track{height:12px;background:#1d2b43;border-radius:6px;overflow:hidden}.fill{height:100%;border-radius:6px}.ci-value{text-align:right;font:12px ui-monospace,monospace}footer{padding-top:32px;border-top:1px solid #253047;margin-top:30px;color:#7f95b5;font-size:12px;line-height:1.8}a{color:#38bdf8}#announcement{position:absolute;left:-9999px}@media(max-width:650px){main{padding:20px 14px}.cards{grid-template-columns:1fr}.actions{margin-left:0;width:100%}.tag{font-size:10px}.ci-row{grid-template-columns:80px 1fr 70px;gap:8px}.toolbar{gap:10px}.stats strong{font-size:17px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body><main>
+<nav><div class="brand"><span>⌘</span> Selection Lab</div><span class="tag"><i></i>Runs in your browser</span></nav>
+<div class="eyebrow">KTH LARGEST / INTERACTIVE EXECUTION</div>
+<h1>Watch the work happen.<br><span>One input. Four approaches.</span></h1>
+<p>Run all four algorithms on identical numbers. Watch the sorted prefix grow, the top K change, the heap rebalance and Quick Select narrow its search.</p>
+<div class="toolbar">
+<label>Elements<input id="n" type="number" min="1" max="50000" step="1" value="1000" list="sizes" required><datalist id="sizes"><option value="64"><option value="256"><option value="1000"><option value="5000"><option value="20000"><option value="50000"></datalist></label>
+<label>Kth largest<input id="k" type="number" min="1" max="1000" step="1" value="10" required></label>
+<label>Input order<select id="distribution"><option value="random">Random</option><option value="ascending">Ascending</option><option value="descending">Descending</option><option value="duplicates">Many duplicates</option></select></label>
+<label>Speed<select id="speed"><option value="100">Slow</option><option value="1000">Normal</option><option value="100000" selected>Fast</option><option value="5000000">Turbo</option></select></label>
+<div class="actions"><button id="run" class="primary">▶ Run algorithms</button><button id="pause" disabled>Pause</button><button id="step" disabled>Step</button><button id="reset">New input</button></div>
+</div>
+<div class="session"><span id="session">Ready</span><span>Highlighted bars = active work · <strong id="target"></strong></span></div>
+<div class="cards" id="cards"></div><div id="announcement" role="status" aria-live="polite"></div>
+<p class="note">Run 1–50,000 elements with any K from 1 to N. Large arrays are grouped into display bars; every element is still processed. All unfinished algorithms receive equal visual step budgets, subject to browser capacity. Turbo advances more steps per frame while keeping controls responsive. Sort All and Sort K can take much longer on large inputs because of their quadratic work. Browser compute time includes stepping overhead. These are executable JavaScript visualizations, independent of the C++ run below.</p>
+<div class="section-head"><div><h2>Measured in GitHub Actions</h2><p id="ci-status"></p></div><label>Benchmark scenario<select id="scenario" aria-label="C++ benchmark scenario"></select></label><button id="use-scenario">Use this input above</button></div>
+<div class="ci-panel" id="ci"></div>
+<footer>C++ durations include input parsing, allocation, selection and captured output; shared runner load can affect timings. The animation is a browser demonstration, not a live feed from the Actions runner.<br><a href="results.csv">Download CSV</a> · <a href="results.json">Raw C++ measurements</a> · <a id="actions-link" href="https://github.com/ghanimmustafa/Kth-Largest-number/actions">GitHub Actions</a></footer>
+</main>
+<script id="benchmark-data" type="application/json">__BENCHMARK_DATA__</script>
+<script>__ALGORITHM_CODE__</script>
+<script>
+'use strict';
+const benchmark = JSON.parse(document.querySelector('#benchmark-data').textContent);
+const names = ['Sort All', 'Sort K', 'Min Heap', 'Quick Select'];
+const colors = ['#fb7185', '#fbbf24', '#38bdf8', '#a78bfa'];
+const complexities = ['O(N²) · keeps N values', 'O(NK) · keeps K values', 'O(N log K) · keeps K values', 'O(N) average · keeps N values'];
+const $ = id => document.getElementById(id);
+let input, maximum = 1, states = [], running = false, started = false, frame = null, previous = 0, budget = 0, seed = 2026, visualElapsed = 0;
+$('cards').innerHTML = names.map((name,i) => `<article class="card" style="--accent:${colors[i]}"><div class="card-head"><div><div class="title"><i></i>${name}</div><div class="complexity">${complexities[i]}</div></div><span class="state" id="state-${i}">READY</span></div><div class="plot"><canvas id="plot-${i}" role="img" aria-label="${name} working values"></canvas></div><div class="phase" id="phase-${i}">Waiting to start</div><div class="stats"><div><span>Visual steps</span><strong id="ops-${i}">0</strong></div><div><span>Compute time</span><strong id="time-${i}">—</strong></div><div><span>Kth result</span><strong id="result-${i}">—</strong></div></div></article>`).join('');
+function draw(i) {
+  const state = states[i], canvas = $(`plot-${i}`), rect = canvas.getBoundingClientRect(), ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * ratio); canvas.height = 160 * ratio;
+  const ctx = canvas.getContext('2d'); ctx.scale(ratio,ratio); const a = state.view;
+  const bars = Math.min(a.length, Math.max(1, Math.floor(rect.width / 2))), width = rect.width / Math.max(bars,1);
+  const highlighted = new Set(state.active.map(index => Math.ceil((index + 1) * bars / Math.max(a.length,1)) - 1));
+  for (let j=0; j<bars; j++) {
+    const start=Math.floor(j*a.length/bars),end=Math.floor((j+1)*a.length/bars);
+    let sum=0;for(let index=start;index<end;index++)sum+=a[index];
+    const height=Math.max(2,(sum/Math.max(1,end-start))/maximum*140);
+    ctx.fillStyle=state.done?colors[i]:highlighted.has(j)?'#f8fafc':colors[i]+'99';
+    ctx.fillRect(j*width+.5,150-height,Math.max(1,width-1),height);
+  }
+}
+function controls() {
+  const unfinished = states.some(s=>!s.done);
+  $('pause').disabled = !started || !unfinished;
+  $('pause').textContent = running ? 'Pause' : 'Resume';
+  $('step').disabled = !started || running || !unfinished;
+  $('run').textContent = started ? '↻ Run again' : '▶ Run algorithms';
+}
+function prepare(newSeed=false) {
+  if(frame!==null) cancelAnimationFrame(frame); frame=null; running=false;started=false;visualElapsed=0;budget=0;
+  if(newSeed) seed++;
+  const n=Math.max(1,Math.min(50000,Math.trunc(Number($('n').value))||1));
+  const k=Math.max(1,Math.min(n,Math.trunc(Number($('k').value))||1));$('n').value=n;$('k').value=k;$('k').max=n;
+  input=SelectionLab.dataset(n,$('distribution').value,seed);
+  maximum=input.reduce((largest,value)=>Math.max(largest,value),1);
+  const expected=[...input].sort((a,b)=>b-a)[k-1];
+  $('target').textContent=`Expected result: ${expected}`;
+  states=names.map((_,i)=>{const a=[...input];return {generator:SelectionLab.algorithms[i](a,k),view:a,active:[],done:false,ops:0,compute:0,expected}});
+  states.forEach((s,i)=>{$(`state-${i}`).textContent='READY';$(`state-${i}`).className='state';$(`phase-${i}`).textContent='Waiting to start';$(`ops-${i}`).textContent='0';$(`time-${i}`).textContent='—';$(`result-${i}`).textContent='—';draw(i)});
+  $('session').textContent=`Seed ${seed} · ${n} elements · K = ${k}`;controls();
+}
+function advance(count, render=true) {
+  states.forEach((s,i)=>{
+    if(s.done)return;
+    const begin=performance.now();
+    try {
+      for(let step=0;step<count;step++) {
+        const next=s.generator.next();
+        if(next.done){s.done=true;s.result=next.value;s.valid=s.result===s.expected;break}
+        s.ops++;s.active=next.value.active||[];if(next.value.view)s.view=next.value.view;s.phase=next.value.phase;
+      }
+    } catch(error) {s.done=true;s.valid=false;s.phase=error.message}
+    s.compute+=performance.now()-begin;
+  });
+  if(!render)return;
+  states.forEach((s,i)=>{
+    $(`ops-${i}`).textContent=s.ops.toLocaleString();$(`time-${i}`).textContent=`${s.compute.toFixed(2)} ms`;
+    $(`phase-${i}`).textContent=s.done?(s.valid?'Finished · result verified against sorted input':'Error · '+(s.phase||'result mismatch')):s.phase;
+    $(`state-${i}`).textContent=s.done?(s.valid?'VERIFIED':'ERROR'):(running?'RUNNING':'PAUSED');
+    $(`state-${i}`).className='state '+(s.done?(s.valid?'done':'error'):'running');
+    if(s.done)$(`result-${i}`).textContent=s.result??'Error';draw(i);
+  });
+  if(states.every(s=>s.done)){running=false;$('announcement').textContent=states.every(s=>s.valid)?'All four algorithms finished with verified results.':'The run finished with an error.'}
+  $('session').textContent=`${states.filter(s=>s.done).length}/4 finished · animation ${(visualElapsed/1000).toFixed(1)} s · seed ${seed}`;controls();
+}
+function tick(now) {
+  if(!running){frame=null;return}
+  const delta=Math.min(100,now-previous);previous=now;visualElapsed+=delta;budget=Math.min(50000,budget+delta*Number($('speed').value)/1000);
+  const begin=performance.now();
+  while(budget>=1&&states.some(s=>!s.done)) {
+    const count=Math.min(256,Math.floor(budget));budget-=count;advance(count,false);
+    if(performance.now()-begin>=8)break;
+  }
+  advance(0);
+  frame=running?requestAnimationFrame(tick):null;
+}
+function resume(){running=true;previous=performance.now();controls();frame=requestAnimationFrame(tick)}
+$('run').addEventListener('click',()=>{prepare();started=true;$('announcement').textContent='Running all four algorithms.';resume()});
+$('pause').addEventListener('click',()=>{if(running){running=false;if(frame!==null)cancelAnimationFrame(frame);frame=null;states.forEach((s,i)=>{if(!s.done)$(`state-${i}`).textContent='PAUSED'});controls()}else resume()});
+$('step').addEventListener('click',()=>advance(1));$('reset').addEventListener('click',()=>prepare(true));
+['n','k','distribution'].forEach(id=>$(id).addEventListener('change',()=>prepare()));
+window.addEventListener('resize',()=>states.forEach((_,i)=>draw(i)));
+const groups=new Map();
+for(const row of benchmark.results){const key=`${row.n}/${row.k}/${row.distribution}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)}
+$('scenario').innerHTML=[...groups].map(([key,rows])=>`<option value="${key}">${rows[0].distribution} · N=${rows[0].n.toLocaleString()} · K=${rows[0].k.toLocaleString()}</option>`).join('');
+function showCI(){const rows=groups.get($('scenario').value)||[];const maximum=Math.max(...rows.map(r=>r.median_ms),.000001);$('use-scenario').disabled=!rows.length;$('ci').innerHTML=rows.length?rows.map(r=>`<div class="ci-row"><span>${r.algorithm}</span><div class="track"><div class="fill" style="width:${Math.max(.5,r.median_ms/maximum*100)}%;background:${colors[r.id-1]}"></div></div><span class="ci-value">${r.median_ms.toFixed(3)} ms</span></div>`).join(''):'No C++ measurements yet. Run the performance workflow to populate this panel.'}
+$('ci-status').textContent=`${benchmark.status} · ${benchmark.results.length} measurements · ${benchmark.metadata.repeats} samples each · ${benchmark.metadata.generated_at}`;
+if(benchmark.metadata.run_url)$('actions-link').href=benchmark.metadata.run_url;
+$('use-scenario').addEventListener('click',()=>{const row=(groups.get($('scenario').value)||[])[0];if(!row)return;$('n').value=row.n;$('k').value=row.k;$('distribution').value=row.distribution;$('speed').value='5000000';prepare()});
+$('scenario').addEventListener('change',showCI);showCI();prepare();
+</script>
+</body></html>

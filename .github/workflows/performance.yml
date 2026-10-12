@@ -13,6 +13,10 @@ on:
         description: 'Measured repetitions (1–20)'
         default: '5'
         required: true
+      publish_html:
+        description: 'Publish the interactive HTML view (enable GitHub Pages first)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,7 +39,9 @@ jobs:
             SelectionAlgorithm.cpp AlgorithmSortAll.cpp AlgorithmSortK.cpp \
             AlgorithmSortHeap.cpp AlgorithmSortQuick.cpp BinaryHeap.cpp -o build/benchmark
       - name: Verify boundary cases
-        run: python3 benchmarks/report.py --binary build/benchmark --check
+        run: |
+          python3 benchmarks/report.py --binary build/benchmark --check
+          node benchmarks/check-visualization.js
       - name: Benchmark · live timings and charts
         env:
           BENCHMARK_SIZES: ${{ inputs.sizes || '1000,5000,20000' }}
@@ -55,3 +61,38 @@ jobs:
         env:
           REPORT_URL: ${{ steps.report.outputs.artifact-url }}
         run: echo "[Download the interactive charts and raw results]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish interactive algorithm view
+    needs: benchmark
+    if: github.ref_name == github.event.repository.default_branch && (inputs.publish_html == true || vars.PUBLISH_PERFORMANCE_VIEW == 'true')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: performance-pages
+      cancel-in-progress: false
+    steps:
+      - name: Download measured report
+        uses: actions/download-artifact@v4
+        with:
+          name: algorithm-performance-${{ github.run_number }}
+          path: public
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Package HTML view
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - name: Publish HTML view
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Link rendered view in Actions summary
+        env:
+          VIEW_URL: ${{ steps.deployment.outputs.page_url }}
+        run: echo "## [▶ Open the interactive algorithm view]($VIEW_URL)" >> "$GITHUB_STEP_SUMMARY"

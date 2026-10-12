@@ -10,6 +10,7 @@ import platform
 import statistics
 import subprocess
 import time
+from urllib.parse import urlencode
 
 NAMES = {1: "Sort All", 2: "Sort K", 3: "Min Heap", 4: "Quick Select"}
 COLORS = {1: "#fb7185", 2: "#fbbf24", 3: "#38bdf8", 4: "#a78bfa"}
@@ -56,6 +57,54 @@ def chart(rows, title):
     return "".join(parts)
 
 
+def summary_charts(rows):
+    """Public image URLs let GitHub render charts without hosting repo files.
+
+    Only algorithm names, dataset sizes and median durations go to QuickChart.
+    Raw samples, runner metadata and commit identifiers stay in the artifact.
+    """
+    complete = {}
+    for row in rows:
+        key = (row["n"], row["k"], row["distribution"])
+        complete.setdefault(key, {})[row["id"]] = row
+    complete = {key: group for key, group in complete.items() if len(group) == 4}
+    if not complete:
+        return []
+    largest = max(key[0] for key in complete)
+    markdown = ["### Performance charts", "", f"Largest input: **N = {largest:,}** · median milliseconds · shorter bars are faster.", ""]
+    for distribution in DISTRIBUTIONS:
+        ks = sorted(k for n, k, d in complete if n == largest and d == distribution)
+        if not ks:
+            continue
+        config = {
+            "type": "bar",
+            "data": {
+                "labels": [f"K = {k:,} ({100*k/largest:g}%)" for k in ks],
+                "datasets": [{"label": name, "data": [round(complete[(largest, k, distribution)][i]["median_ms"], 6) for k in ks],
+                              "backgroundColor": COLORS[i], "borderRadius": 4} for i, name in NAMES.items()],
+            },
+            "options": {
+                "indexAxis": "y",
+                "plugins": {
+                    "title": {"display": True, "text": f"{distribution.title()} inputs · N = {largest:,}", "color": "#e2e8f0", "font": {"size": 20}},
+                    "legend": {"labels": {"color": "#cbd5e1"}},
+                },
+                "scales": {
+                    "x": {"beginAtZero": True, "title": {"display": True, "text": "Median duration (ms)", "color": "#94a3b8"},
+                          "ticks": {"color": "#94a3b8"}, "grid": {"color": "#26324a"}},
+                    "y": {"ticks": {"color": "#cbd5e1"}, "grid": {"display": False}},
+                },
+            },
+        }
+        url = "https://quickchart.io/chart?" + urlencode({
+            "version": "4", "format": "png", "width": 900, "height": 360,
+            "backgroundColor": "#111b2e", "c": json.dumps(config, separators=(",", ":")),
+        })
+        markdown.extend([f"![{distribution.title()} algorithm comparison, N={largest:,}; median milliseconds]({url})", ""])
+    markdown.extend(["Charts use QuickChart image rendering. Exact values for every size are in the table below; offline charts are included in the artifact.", ""])
+    return markdown
+
+
 def save_report(output, rows, metadata, status):
     output.mkdir(parents=True, exist_ok=True)
     (output / "results.json").write_text(json.dumps({"metadata": metadata, "status": status, "results": rows}, indent=2))
@@ -65,13 +114,15 @@ def save_report(output, rows, metadata, status):
         writer.writeheader()
         writer.writerows(rows)
     summary = ["## ⚡ Algorithm performance", f"**{status}** · {len(rows)} measurements · {metadata['repeats']} repetitions + one warmup", "",
-               "Times include input parsing, allocation, selection and captured output; exclude process startup and dataset generation. All results are checked against a sorted reference. Shared runner timings can vary between runs.", "",
+               "Times include input parsing, allocation, selection and captured output; exclude process startup and dataset generation. All results are checked against a sorted reference. Shared runner timings can vary between runs.", ""]
+    summary.extend(summary_charts(rows))
+    summary.extend(["<details>", "<summary>View all timings, sample ranges and relative speeds</summary>", "",
                "| Input | K | Distribution | Algorithm | Median (ms) | Range (ms) | vs fastest |", "|---:|---:|---|---|---:|---:|---:|"]
+    )
     groups = {}
     for row in rows:
         key = (row["n"], row["k"], row["distribution"])
         groups.setdefault(key, []).append(row)
-    panels = []
     for index, ((n, k, distribution), group) in enumerate(groups.items()):
         fastest = min(r["median_ms"] for r in group) or 1e-9
         for row in group:
@@ -79,37 +130,17 @@ def save_report(output, rows, metadata, status):
         title = f"{distribution.title()} · N = {n:,} · K = {k:,}"
         svg = chart(group, title)
         (output / f"chart-{index+1:02d}.svg").write_text(svg)
-        panels.append(f'<article data-distribution="{distribution}" data-size="{n}">{svg}</article>')
-    summary.extend(["", "Download the **algorithm-performance** artifact for the interactive report, SVG charts, CSV and individual timing samples."])
+    summary.extend(["", "</details>", "", "Download the **algorithm-performance** artifact for the interactive report, SVG charts, CSV and individual timing samples."])
     markdown = "\n".join(summary) + "\n"
     (output / "summary.md").write_text(markdown)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(markdown)
-    fastest_count = {}
-    for group in groups.values():
-        if len(group) == 4:
-            winner = min(group, key=lambda r: r["median_ms"])["algorithm"]
-            fastest_count[winner] = fastest_count.get(winner, 0) + 1
-    leader = max(fastest_count, key=fastest_count.get) if fastest_count else "Pending"
-    options = ''.join(f'<option value="{n}">{n:,} elements</option>' for n in sorted({r['n'] for r in rows}))
-    page = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kth Largest · Performance Lab</title><style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#080e1b;color:#e2e8f0;font:16px/1.6 system-ui,sans-serif}
-main{max-width:1120px;margin:auto;padding:48px 24px}.eyebrow{color:#38bdf8;letter-spacing:.18em;font-size:12px;font-weight:700}
-h1{font-size:clamp(32px,5vw,56px);letter-spacing:-.04em;line-height:1.1;margin:18px 0}p{color:#94a3b8;max-width:850px}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:32px 0}.metric{border:1px solid #26324a;border-radius:16px;padding:20px;background:#111b2e}.metric strong{display:block;font-size:26px;color:#f8fafc}.metric span{color:#94a3b8;font-size:13px}
-.controls{display:flex;gap:18px;flex-wrap:wrap;margin:28px 0}select{background:#111b2e;color:#e2e8f0;padding:10px;border:1px solid #334155;border-radius:8px}label{display:flex;align-items:center;gap:10px}
-.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,450px),1fr));gap:18px}svg{width:100%;display:block}article[hidden]{display:none}a{color:#38bdf8}.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:14px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}footer{margin-top:36px;color:#94a3b8;font-size:13px}
-</style><main><div class="eyebrow">KTH LARGEST / PERFORMANCE LAB</div><h1>Four algorithms.<br>One fair comparison.</h1>
-<p>Measured on identical, seeded datasets. Each result is verified against a sorted reference. Explore how input size, order and K change the cost of selection.</p>
-'''
-    page += f'<div class="metrics"><div class="metric"><strong>{html.escape(status)}</strong><span>Run status</span></div><div class="metric"><strong>{len(rows)}</strong><span>Verified measurements</span></div><div class="metric"><strong>{metadata["repeats"]}</strong><span>Samples per measurement</span></div><div class="metric"><strong>{leader}</strong><span>Most scenario wins</span></div></div>'
-    page += '<div class="legend">' + ''.join(f'<span><i class="dot" style="background:{COLORS[i]}"></i>{name}</span>' for i, name in NAMES.items()) + '</div>'
-    page += '<div class="controls"><label>Input size <select id="size"><option value="all">All sizes</option>' + options + '</select></label><label>Distribution <select id="distribution"><option value="all">All distributions</option>' + ''.join(f'<option>{d}</option>' for d in DISTRIBUTIONS) + '</select></label></div>'
-    page += '<div class="charts">' + ''.join(panels) + '</div>'
-    page += f'<footer>Median milliseconds; lower is faster. Bars use a separate linear scale per chart. Timing includes input parsing, allocation, selection and captured output. Dataset generation, reference sorting and process startup are excluded. Shared runner noise means small differences may not be significant.<br>Seed {SEED} · {html.escape(metadata["platform"])} · Commit {html.escape(metadata["commit"])}<br><a href="results.csv">Download CSV</a> · <a href="results.json">Raw samples &amp; metadata</a></footer></main>'
-    page += '''<script>const size=document.querySelector('#size'),distribution=document.querySelector('#distribution');function filter(){document.querySelectorAll('article').forEach(p=>p.hidden=(size.value!=='all'&&p.dataset.size!==size.value)||(distribution.value!=='all'&&p.dataset.distribution!==distribution.value))}size.addEventListener('change',filter);distribution.addEventListener('change',filter);</script></html>'''
+    payload = json.dumps({"metadata": metadata, "status": status, "results": rows}, separators=(",", ":")).replace("<", "\\u003c")
+    template = Path(__file__).with_name("view.html").read_text()
+    algorithms = Path(__file__).with_name("algorithms.js").read_text()
+    page = template.replace("__ALGORITHM_CODE__", algorithms).replace("__BENCHMARK_DATA__", payload)
     (output / "index.html").write_text(page)
+
 
 
 def main():
@@ -127,7 +158,9 @@ def main():
     if not sizes or len(sizes) > 6 or not all(1 <= n <= 50000 for n in sizes) or not 1 <= repeats <= 20:
         parser.error("Use 1–6 input sizes between 1 and 50000, and 1–20 repetitions.")
     metadata = {"seed": SEED, "repeats": repeats, "platform": platform.platform(),
-                "commit": os.getenv("GITHUB_SHA", "local"), "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "commit": os.getenv("GITHUB_SHA", "local"),
+                "run_url": f"{os.getenv('GITHUB_SERVER_URL', 'https://github.com')}/{os.getenv('GITHUB_REPOSITORY', 'ghanimmustafa/Kth-Largest-number')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}" if os.getenv("GITHUB_RUN_ID") else "",
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "timing": "steady_clock, milliseconds; select() including stream parsing and captured output"}
     rows = []
     total = sum(len({max(1, n // 100), max(1, n // 2)}) for n in sizes) * 16
