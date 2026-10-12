@@ -1,0 +1,57 @@
+name: Algorithm performance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      sizes:
+        description: 'Input sizes (comma separated, maximum 50000)'
+        default: '1000,5000,20000'
+        required: true
+      repeats:
+        description: 'Measured repetitions (1–20)'
+        default: '5'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Live algorithm comparison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build optimized benchmark
+        run: |
+          mkdir -p build
+          g++ -std=c++17 -O2 -Wall -Wextra -I. benchmarks/runner.cpp \
+            SelectionAlgorithm.cpp AlgorithmSortAll.cpp AlgorithmSortK.cpp \
+            AlgorithmSortHeap.cpp AlgorithmSortQuick.cpp BinaryHeap.cpp -o build/benchmark
+      - name: Verify boundary cases
+        run: python3 benchmarks/report.py --binary build/benchmark --check
+      - name: Benchmark · live timings and charts
+        env:
+          BENCHMARK_SIZES: ${{ inputs.sizes || '1000,5000,20000' }}
+          BENCHMARK_REPEATS: ${{ inputs.repeats || '5' }}
+        run: python3 -u benchmarks/report.py --binary build/benchmark --output benchmark-results
+      - name: Upload visual report and raw measurements
+        id: report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: algorithm-performance-${{ github.run_number }}
+          path: benchmark-results/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Link downloadable report
+        if: always() && steps.report.outputs.artifact-url != ''
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: echo "[Download the interactive charts and raw results]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"

@@ -18,11 +18,11 @@ int AlgorithmSortQuick::select()
              cin>>x;
             pNums[i] = x;
     }
-   quickselect( pNums, left, right, k);
-    int result = pNums[k];
+   quickselect( pNums, left, right, k - 1);
+    int result = pNums[k - 1];
     cout<<"Result: "<<result<<endl;
-    pNums = 0;
     delete [] pNums;
+    pNums = 0;
     return result;
 }
 
@@ -59,18 +59,18 @@ int AlgorithmSortQuick::quickselect(int* pNums,int left, int right,int k)
     else
     {
             // Do insertion sort for N<=10
-           for(int i=0; i<=array_size; i++)
+           for(int i=left + 1; i<=right; i++)
         {
             int  temp = pNums[i];
             int j= i-1;
-            while(j>=0 && temp >= pNums[j])
+            while(j>=left && temp > pNums[j])
             {
                 pNums[j+1] = pNums[j];
                 j = j-1;
             }
             pNums[j+1] = temp;
         }
-        return pNums[k-1];
+        return pNums[k];
     }
 }
 

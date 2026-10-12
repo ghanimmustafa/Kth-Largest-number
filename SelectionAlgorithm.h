@@ -9,6 +9,7 @@ class SelectionAlgorithm
 
     public:
         virtual int select();
+        virtual ~SelectionAlgorithm() = default;
 
          SelectionAlgorithm(int k);
 
