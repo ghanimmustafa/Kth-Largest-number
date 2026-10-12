@@ -16,7 +16,7 @@ on:
       publish_html:
         description: 'Publish the interactive HTML view (enable GitHub Pages first)'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -65,7 +65,7 @@ jobs:
   publish:
     name: Publish interactive algorithm view
     needs: benchmark
-    if: github.ref_name == github.event.repository.default_branch && (inputs.publish_html == true || vars.PUBLISH_PERFORMANCE_VIEW == 'true')
+    if: github.ref_name == github.event.repository.default_branch && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_html == true))
     runs-on: ubuntu-24.04
     permissions:
       contents: read

@@ -31,7 +31,7 @@ GitHub Actions summaries support Markdown and images, but cannot execute an inte
 3. Open **Actions → Algorithm performance → Run workflow** on the default branch. Check **Publish the interactive HTML view**, then run it.
 4. After publication, click **Open the interactive algorithm view** in the run summary and press **Run algorithms**.
 
-To refresh the hosted C++ results automatically after each successful default-branch run, add a repository Actions variable named `PUBLISH_PERFORMANCE_VIEW` with value `true` in **Settings → Secrets and variables → Actions → Variables**. Pull requests do not deploy the site.
+After Pages is enabled, every successful push to the default branch automatically refreshes the hosted view and C++ results. Manual runs publish by default; uncheck **Publish the interactive HTML view** to run benchmarks only. Pull requests and runs on other branches do not deploy the site. Publication also requires the benchmark job to succeed.
 
 The browser actually executes the visualized algorithms, with animation slowed for readability. It does not stream the remote C++ process; hosted C++ results update when a benchmark workflow finishes and publishes.
 
